@@ -1,0 +1,214 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Official test vectors for AES-GCM nonce generation and validation",
+  "version": "1.0",
+  "nonceSpec": {
+    "totalLength": 12,
+    "structure": {
+      "noncePrefix": {"offset": 0, "length": 4, "source": "random"},
+      "chunkIndex": {"offset": 4, "length": 8, "encoding": "big-endian uint64"}
+    },
+    "formula": "nonce = noncePrefix (4 bytes) || chunkIndex (8 bytes big-endian)"
+  },
+  "vectors": [
+    {
+      "id": "nonce-001",
+      "description": "First chunk (index 0)",
+      "inputs": {
+        "noncePrefix": "a1b2c3d4",
+        "chunkIndex": 0
+      },
+      "expected": {
+        "nonceHex": "a1b2c3d40000000000000000",
+        "nonceLength": 12
+      }
+    },
+    {
+      "id": "nonce-002",
+      "description": "Second chunk (index 1)",
+      "inputs": {
+        "noncePrefix": "a1b2c3d4",
+        "chunkIndex": 1
+      },
+      "expected": {
+        "nonceHex": "a1b2c3d40000000000000001",
+        "nonceLength": 12
+      }
+    },
+    {
+      "id": "nonce-003",
+      "description": "Chunk 256 (index crosses byte boundary)",
+      "inputs": {
+        "noncePrefix": "a1b2c3d4",
+        "chunkIndex": 256
+      },
+      "expected": {
+        "nonceHex": "a1b2c3d40000000000000100",
+        "nonceLength": 12,
+        "note": "256 = 0x100"
+      }
+    },
+    {
+      "id": "nonce-004",
+      "description": "Large chunk index (10000)",
+      "inputs": {
+        "noncePrefix": "deadbeef",
+        "chunkIndex": 10000
+      },
+      "expected": {
+        "nonceHex": "deadbeef0000000000002710",
+        "nonceLength": 12,
+        "note": "10000 = 0x2710"
+      }
+    },
+    {
+      "id": "nonce-005",
+      "description": "Maximum safe JavaScript integer",
+      "inputs": {
+        "noncePrefix": "12345678",
+        "chunkIndex": 9007199254740991
+      },
+      "expected": {
+        "nonceHex": "123456780001ffffffffffff",
+        "nonceLength": 12,
+        "note": "Number.MAX_SAFE_INTEGER = 2^53 - 1"
+      }
+    },
+    {
+      "id": "nonce-006",
+      "description": "All zeros prefix",
+      "inputs": {
+        "noncePrefix": "00000000",
+        "chunkIndex": 0
+      },
+      "expected": {
+        "nonceHex": "000000000000000000000000",
+        "nonceLength": 12,
+        "warning": "Valid but unusual - random prefix should rarely be all zeros"
+      }
+    },
+    {
+      "id": "nonce-007",
+      "description": "All ones prefix",
+      "inputs": {
+        "noncePrefix": "ffffffff",
+        "chunkIndex": 0
+      },
+      "expected": {
+        "nonceHex": "ffffffff0000000000000000",
+        "nonceLength": 12
+      }
+    },
+    {
+      "id": "nonce-008",
+      "description": "Different evidence, same chunk index",
+      "scenario": "Two evidence packages, both at chunk 0",
+      "evidence1": {
+        "noncePrefix": "11111111",
+        "chunkIndex": 0,
+        "expectedNonce": "111111110000000000000000"
+      },
+      "evidence2": {
+        "noncePrefix": "22222222",
+        "chunkIndex": 0,
+        "expectedNonce": "222222220000000000000000"
+      },
+      "notes": [
+        "Different noncePrefix ensures unique nonces across evidence",
+        "Each evidence has its own DEK, so nonce uniqueness is per-DEK"
+      ]
+    },
+    {
+      "id": "nonce-009",
+      "description": "Sequential chunks for same evidence",
+      "inputs": {
+        "noncePrefix": "cafebabe"
+      },
+      "chunks": [
+        {"index": 0, "nonce": "cafebabe0000000000000000"},
+        {"index": 1, "nonce": "cafebabe0000000000000001"},
+        {"index": 2, "nonce": "cafebabe0000000000000002"},
+        {"index": 3, "nonce": "cafebabe0000000000000003"},
+        {"index": 4, "nonce": "cafebabe0000000000000004"}
+      ],
+      "notes": [
+        "Sequential chunk indices guarantee unique nonces",
+        "No possibility of collision within same evidence"
+      ]
+    },
+    {
+      "id": "nonce-010",
+      "description": "Retry scenario - MUST use same nonce",
+      "scenario": "Upload fails, retry required",
+      "original": {
+        "noncePrefix": "abcd1234",
+        "chunkIndex": 5,
+        "nonce": "abcd12340000000000000005",
+        "ciphertext": "original_encrypted_bytes"
+      },
+      "retry": {
+        "nonce": "abcd12340000000000000005",
+        "ciphertext": "original_encrypted_bytes",
+        "notes": [
+          "MUST use same nonce on retry",
+          "MUST use same ciphertext on retry",
+          "Re-encrypting with same nonce leaks XOR of plaintexts"
+        ]
+      },
+      "antiPattern": {
+        "wrong": "Generate new nonce and re-encrypt",
+        "consequence": "Two ciphertexts with same nonce = catastrophic key compromise"
+      }
+    }
+  ],
+  "implementationGuidelines": {
+    "noncePrefixGeneration": {
+      "kotlin": "val noncePrefix = ByteArray(4).also { SecureRandom().nextBytes(it) }",
+      "typescript": "const noncePrefix = crypto.getRandomValues(new Uint8Array(4));",
+      "python": "nonce_prefix = os.urandom(4)"
+    },
+    "nonceConstruction": {
+      "kotlin": "fun buildNonce(prefix: ByteArray, index: Long): ByteArray {\n    val nonce = ByteArray(12)\n    System.arraycopy(prefix, 0, nonce, 0, 4)\n    ByteBuffer.wrap(nonce, 4, 8).order(ByteOrder.BIG_ENDIAN).putLong(index)\n    return nonce\n}",
+      "typescript": "function buildNonce(prefix: Uint8Array, index: bigint): Uint8Array {\n    const nonce = new Uint8Array(12);\n    nonce.set(prefix, 0);\n    const view = new DataView(nonce.buffer);\n    view.setBigUint64(4, index, false);\n    return nonce;\n}",
+      "python": "def build_nonce(prefix: bytes, index: int) -> bytes:\n    return prefix + index.to_bytes(8, 'big')"
+    }
+  },
+  "securityRules": [
+    {
+      "rule": "Never reuse (DEK, nonce) pair",
+      "consequence": "Catastrophic: XOR of two plaintexts leaked",
+      "prevention": "Unique noncePrefix per evidence, sequential chunkIndex"
+    },
+    {
+      "rule": "Never re-encrypt on retry",
+      "consequence": "Same nonce used twice with same DEK",
+      "prevention": "Persist ciphertext before upload, retry from disk"
+    },
+    {
+      "rule": "DEK bound to single evidence",
+      "consequence": "Cross-evidence nonce collision risk",
+      "prevention": "Generate fresh DEK per evidence, never share"
+    },
+    {
+      "rule": "Lost noncePrefix = abandon evidence",
+      "consequence": "Cannot reconstruct correct nonces for verification",
+      "prevention": "Persist noncePrefix before any encryption"
+    }
+  ],
+  "collisionAnalysis": {
+    "withinSingleEvidence": {
+      "probability": 0,
+      "reason": "Sequential chunkIndex guarantees uniqueness"
+    },
+    "acrossEvidenceWithSameDEK": {
+      "probability": "N/A",
+      "reason": "DEK is never shared across evidence"
+    },
+    "noncePrefixBirthdayBound": {
+      "prefixSpace": "2^32 = 4 billion",
+      "50%CollisionAt": "~77,000 evidence packages",
+      "impact": "None - different DEK per evidence",
+      "monitoring": "Track for anomaly detection"
+    }
+  }
+}

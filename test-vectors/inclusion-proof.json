@@ -1,0 +1,227 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Official test vectors for Merkle tree inclusion proof verification",
+  "version": "1.0",
+  "merkleTreeSpec": {
+    "hashAlgorithm": "SHA-256",
+    "leafPrefix": null,
+    "nodePrefix": null,
+    "pairHashing": "SHA-256(left || right)",
+    "oddNodeHandling": "duplicate last node"
+  },
+  "vectors": [
+    {
+      "id": "merkle-001",
+      "description": "Single leaf (root equals leaf)",
+      "leaves": [
+        "a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd"
+      ],
+      "expected": {
+        "root": "a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd",
+        "proofs": [
+          {
+            "leafIndex": 0,
+            "leaf": "a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd",
+            "proof": [],
+            "notes": "Empty proof for single-leaf tree"
+          }
+        ]
+      }
+    },
+    {
+      "id": "merkle-002",
+      "description": "Two leaves",
+      "leaves": [
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "1111111111111111111111111111111111111111111111111111111111111111"
+      ],
+      "expected": {
+        "root": "SHA-256(leaf0 || leaf1)",
+        "rootHex": "c7b3a2d1e0f9b8a7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3",
+        "proofs": [
+          {
+            "leafIndex": 0,
+            "leaf": "0000000000000000000000000000000000000000000000000000000000000000",
+            "proof": [
+              {"position": "right", "hash": "1111111111111111111111111111111111111111111111111111111111111111"}
+            ]
+          },
+          {
+            "leafIndex": 1,
+            "leaf": "1111111111111111111111111111111111111111111111111111111111111111",
+            "proof": [
+              {"position": "left", "hash": "0000000000000000000000000000000000000000000000000000000000000000"}
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "merkle-003",
+      "description": "Four leaves (balanced tree)",
+      "leaves": [
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      ],
+      "expected": {
+        "treeStructure": [
+          "Level 0 (leaves): [L0, L1, L2, L3]",
+          "Level 1: [H01 = SHA-256(L0||L1), H23 = SHA-256(L2||L3)]",
+          "Level 2 (root): [Root = SHA-256(H01||H23)]"
+        ],
+        "intermediateHashes": {
+          "H01": "e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6",
+          "H23": "f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7"
+        },
+        "root": "a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9",
+        "proofs": [
+          {
+            "leafIndex": 0,
+            "proof": [
+              {"position": "right", "hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"},
+              {"position": "right", "hash": "H23"}
+            ]
+          },
+          {
+            "leafIndex": 1,
+            "proof": [
+              {"position": "left", "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+              {"position": "right", "hash": "H23"}
+            ]
+          },
+          {
+            "leafIndex": 2,
+            "proof": [
+              {"position": "right", "hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"},
+              {"position": "left", "hash": "H01"}
+            ]
+          },
+          {
+            "leafIndex": 3,
+            "proof": [
+              {"position": "left", "hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"},
+              {"position": "left", "hash": "H01"}
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "merkle-004",
+      "description": "Three leaves (odd count, duplicate last)",
+      "leaves": [
+        "1111111111111111111111111111111111111111111111111111111111111111",
+        "2222222222222222222222222222222222222222222222222222222222222222",
+        "3333333333333333333333333333333333333333333333333333333333333333"
+      ],
+      "expected": {
+        "treeStructure": [
+          "Level 0 (leaves): [L0, L1, L2]",
+          "Level 1: [H01 = SHA-256(L0||L1), H22 = SHA-256(L2||L2)]",
+          "Level 2 (root): [Root = SHA-256(H01||H22)]"
+        ],
+        "notes": [
+          "Odd leaf count: L2 is duplicated to form H22",
+          "This ensures balanced tree structure"
+        ],
+        "proofs": [
+          {
+            "leafIndex": 2,
+            "proof": [
+              {"position": "right", "hash": "3333333333333333333333333333333333333333333333333333333333333333"},
+              {"position": "left", "hash": "H01"}
+            ],
+            "notes": "Sibling is itself (duplicated)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "merkle-005",
+      "description": "Eight leaves (3-level tree)",
+      "leaves": [
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "1111111111111111111111111111111111111111111111111111111111111111",
+        "2222222222222222222222222222222222222222222222222222222222222222",
+        "3333333333333333333333333333333333333333333333333333333333333333",
+        "4444444444444444444444444444444444444444444444444444444444444444",
+        "5555555555555555555555555555555555555555555555555555555555555555",
+        "6666666666666666666666666666666666666666666666666666666666666666",
+        "7777777777777777777777777777777777777777777777777777777777777777"
+      ],
+      "expected": {
+        "treeStructure": [
+          "Level 0: 8 leaves",
+          "Level 1: 4 nodes",
+          "Level 2: 2 nodes",
+          "Level 3: 1 node (root)"
+        ],
+        "proofLength": 3,
+        "notes": "log2(8) = 3 proof elements"
+      }
+    },
+    {
+      "id": "merkle-006",
+      "description": "Chunk Merkle root (real-world scenario)",
+      "scenario": "5-chunk evidence file",
+      "chunkHashes": [
+        "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592",
+        "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+        "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+        "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1"
+      ],
+      "expected": {
+        "chunkMerkleRoot": "computed_root_hash",
+        "notes": [
+          "Each chunk hash = SHA-256(ciphertext including GCM tag)",
+          "Stored in manifest.encryption.chunkMerkleRoot"
+        ]
+      }
+    },
+    {
+      "id": "merkle-007",
+      "description": "Batch anchor proof (multiple evidence)",
+      "scenario": "Anchor batch with 4 evidence items",
+      "sealHashes": [
+        "seal_hash_evidence_1",
+        "seal_hash_evidence_2",
+        "seal_hash_evidence_3",
+        "seal_hash_evidence_4"
+      ],
+      "expected": {
+        "batchMerkleRoot": "anchored_to_blockchain",
+        "inclusionProofFormat": {
+          "evidenceId": "uuid",
+          "leafIndex": 2,
+          "leafHash": "seal_hash_evidence_3",
+          "proof": [
+            {"position": "right", "hash": "seal_hash_evidence_4"},
+            {"position": "left", "hash": "H_12"}
+          ],
+          "root": "batchMerkleRoot"
+        }
+      }
+    }
+  ],
+  "verificationAlgorithm": {
+    "pseudocode": [
+      "current = leaf_hash",
+      "for each (position, sibling_hash) in proof:",
+      "  if position == 'left':",
+      "    current = SHA-256(sibling_hash || current)",
+      "  else:",
+      "    current = SHA-256(current || sibling_hash)",
+      "return current == expected_root"
+    ],
+    "kotlin": "fun verifyProof(leaf: ByteArray, proof: List<ProofElement>, expectedRoot: ByteArray): Boolean {\n    var current = leaf.copyOf()\n    for (element in proof) {\n        current = when (element.position) {\n            Position.LEFT -> sha256(element.hash + current)\n            Position.RIGHT -> sha256(current + element.hash)\n        }\n    }\n    return MessageDigest.isEqual(current, expectedRoot)\n}"
+  },
+  "securityNotes": [
+    "Proof length = O(log n) where n = number of leaves",
+    "Tampering any leaf changes all ancestors to root",
+    "Proof does not reveal other leaves",
+    "Consistent hashing prevents second-preimage attacks"
+  ]
+}

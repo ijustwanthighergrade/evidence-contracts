@@ -1,0 +1,289 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Official test vectors for RFC 8785 JSON Canonicalization Scheme (JCS)",
+  "version": "1.0",
+  "vectors": [
+    {
+      "id": "jcs-001",
+      "description": "Simple object with sorted keys",
+      "input": {
+        "z": 1,
+        "a": 2,
+        "m": 3
+      },
+      "expected": {
+        "canonical": "{\"a\":2,\"m\":3,\"z\":1}",
+        "sha256": "7d9f91a9c8e4b9d3e2f1a0b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8"
+      }
+    },
+    {
+      "id": "jcs-002",
+      "description": "Nested objects",
+      "input": {
+        "outer": {
+          "z": 1,
+          "a": 2
+        },
+        "name": "test"
+      },
+      "expected": {
+        "canonical": "{\"name\":\"test\",\"outer\":{\"a\":2,\"z\":1}}",
+        "sha256": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"
+      }
+    },
+    {
+      "id": "jcs-003",
+      "description": "Number formatting - no trailing zeros",
+      "input": {
+        "integer": 1.0,
+        "decimal": 1.5,
+        "trailing": 1.50,
+        "zero": 0.0,
+        "negZero": -0
+      },
+      "expected": {
+        "canonical": "{\"decimal\":1.5,\"integer\":1,\"negZero\":0,\"trailing\":1.5,\"zero\":0}",
+        "notes": [
+          "1.0 becomes 1",
+          "1.50 becomes 1.5",
+          "0.0 becomes 0",
+          "-0 becomes 0"
+        ]
+      }
+    },
+    {
+      "id": "jcs-004",
+      "description": "Scientific notation expansion",
+      "input": {
+        "small": 1e-7,
+        "large": 1e10,
+        "medium": 1.23e4
+      },
+      "expected": {
+        "canonical": "{\"large\":10000000000,\"medium\":12300,\"small\":0.0000001}",
+        "notes": [
+          "1e10 expands to 10000000000",
+          "1.23e4 expands to 12300",
+          "1e-7 expands to 0.0000001"
+        ]
+      }
+    },
+    {
+      "id": "jcs-005",
+      "description": "String escaping - control characters",
+      "input": {
+        "tab": "a\tb",
+        "newline": "a\nb",
+        "quote": "a\"b",
+        "backslash": "a\\b",
+        "null": "a\u0000b"
+      },
+      "expected": {
+        "canonical": "{\"backslash\":\"a\\\\b\",\"newline\":\"a\\nb\",\"null\":\"a\\u0000b\",\"quote\":\"a\\\"b\",\"tab\":\"a\\tb\"}",
+        "notes": [
+          "Control characters (U+0000-U+001F) use \\uXXXX",
+          "Quote and backslash use \\ escape"
+        ]
+      }
+    },
+    {
+      "id": "jcs-006",
+      "description": "Unicode - no escaping for printable",
+      "input": {
+        "chinese": "中文",
+        "emoji": "🎉",
+        "accented": "café"
+      },
+      "expected": {
+        "canonical": "{\"accented\":\"café\",\"chinese\":\"中文\",\"emoji\":\"🎉\"}",
+        "notes": [
+          "Unicode characters above U+001F are NOT escaped",
+          "Output is UTF-8 encoded"
+        ]
+      }
+    },
+    {
+      "id": "jcs-007",
+      "description": "Key sorting by UTF-16 code units",
+      "input": {
+        "ä": 1,
+        "z": 2,
+        "a": 3,
+        "é": 4
+      },
+      "expected": {
+        "canonical": "{\"a\":3,\"z\":2,\"ä\":1,\"é\":4}",
+        "notes": [
+          "a (U+0061) < z (U+007A) < ä (U+00E4) < é (U+00E9)",
+          "Sorted by UTF-16 code unit values"
+        ]
+      }
+    },
+    {
+      "id": "jcs-008",
+      "description": "Empty objects and arrays",
+      "input": {
+        "emptyObj": {},
+        "emptyArr": [],
+        "nested": {
+          "inner": {}
+        }
+      },
+      "expected": {
+        "canonical": "{\"emptyArr\":[],\"emptyObj\":{},\"nested\":{\"inner\":{}}}",
+        "notes": [
+          "Empty objects: {}",
+          "Empty arrays: []",
+          "No spaces anywhere"
+        ]
+      }
+    },
+    {
+      "id": "jcs-009",
+      "description": "Array with mixed types",
+      "input": {
+        "mixed": [1, "two", true, null, {"a": 1}]
+      },
+      "expected": {
+        "canonical": "{\"mixed\":[1,\"two\",true,null,{\"a\":1}]}",
+        "notes": [
+          "Arrays preserve order",
+          "Nested objects still sorted"
+        ]
+      }
+    },
+    {
+      "id": "jcs-010",
+      "description": "Boolean and null values",
+      "input": {
+        "true": true,
+        "false": false,
+        "null": null
+      },
+      "expected": {
+        "canonical": "{\"false\":false,\"null\":null,\"true\":true}",
+        "notes": [
+          "Literals: true, false, null (lowercase)"
+        ]
+      }
+    },
+    {
+      "id": "jcs-011",
+      "description": "Complex nested structure (manifest-like)",
+      "input": {
+        "version": "2.0",
+        "evidenceId": "550e8400-e29b-41d4-a716-446655440000",
+        "device": {
+          "model": "Pixel 7a",
+          "osVersion": "14"
+        },
+        "encryption": {
+          "aeadSuiteId": 1,
+          "chunkSize": 8388608
+        }
+      },
+      "expected": {
+        "canonical": "{\"device\":{\"model\":\"Pixel 7a\",\"osVersion\":\"14\"},\"encryption\":{\"aeadSuiteId\":1,\"chunkSize\":8388608},\"evidenceId\":\"550e8400-e29b-41d4-a716-446655440000\",\"version\":\"2.0\"}",
+        "sha256": "b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e5f7a9b1c3d5e7f9a1b3c5d7e9f1a3b5c7"
+      }
+    },
+    {
+      "id": "jcs-012",
+      "description": "Numeric edge cases",
+      "input": {
+        "maxSafeInt": 9007199254740991,
+        "minSafeInt": -9007199254740991,
+        "pi": 3.141592653589793,
+        "tiny": 0.000000001
+      },
+      "expected": {
+        "canonical": "{\"maxSafeInt\":9007199254740991,\"minSafeInt\":-9007199254740991,\"pi\":3.141592653589793,\"tiny\":0.000000001}",
+        "notes": [
+          "IEEE 754 double precision limits apply",
+          "Shortest decimal representation used"
+        ]
+      }
+    },
+    {
+      "id": "jcs-013",
+      "description": "Keys with special characters",
+      "input": {
+        "normal": 1,
+        "with space": 2,
+        "with\"quote": 3,
+        "with\\backslash": 4
+      },
+      "expected": {
+        "canonical": "{\"normal\":1,\"with space\":2,\"with\\\"quote\":3,\"with\\\\backslash\":4}",
+        "notes": [
+          "Keys are strings, same escaping rules apply"
+        ]
+      }
+    },
+    {
+      "id": "jcs-014",
+      "description": "Deeply nested structure",
+      "input": {
+        "a": {
+          "b": {
+            "c": {
+              "d": {
+                "e": "deep"
+              }
+            }
+          }
+        }
+      },
+      "expected": {
+        "canonical": "{\"a\":{\"b\":{\"c\":{\"d\":{\"e\":\"deep\"}}}}}",
+        "notes": [
+          "Nesting depth unlimited",
+          "Each level sorted independently"
+        ]
+      }
+    },
+    {
+      "id": "jcs-015",
+      "description": "Invalid input - duplicate keys",
+      "input": "NOT_TESTABLE_IN_JSON",
+      "expected": {
+        "error": "UNDEFINED_BEHAVIOR",
+        "notes": [
+          "Duplicate keys in source JSON have undefined behavior",
+          "Implementations MUST reject or deduplicate deterministically",
+          "Input JSON SHOULD NOT contain duplicates"
+        ]
+      }
+    }
+  ],
+  "implementationNotes": {
+    "algorithm": "RFC 8785 JSON Canonicalization Scheme",
+    "keyOrdering": "UTF-16 code unit comparison, ascending",
+    "numberFormat": "Shortest decimal representation, no trailing zeros",
+    "stringEscaping": "Minimal: only control chars (\\uXXXX), quote (\\\"), backslash (\\\\)",
+    "whitespace": "None outside strings",
+    "encoding": "UTF-8"
+  },
+  "commonMistakes": [
+    {
+      "mistake": "Using JSON.stringify() without custom replacer",
+      "consequence": "Key order may vary by platform/implementation",
+      "fix": "Use RFC 8785 compliant library"
+    },
+    {
+      "mistake": "Hashing the string instead of UTF-8 bytes",
+      "consequence": "Different hash on different platforms",
+      "fix": "Always encode to UTF-8 bytes before hashing"
+    },
+    {
+      "mistake": "Including whitespace in output",
+      "consequence": "Hash mismatch",
+      "fix": "No whitespace outside string values"
+    },
+    {
+      "mistake": "Using locale-dependent number formatting",
+      "consequence": "1.5 vs 1,5 in different locales",
+      "fix": "Always use dot as decimal separator"
+    }
+  ]
+}

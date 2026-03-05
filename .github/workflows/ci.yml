@@ -50,6 +50,9 @@ jobs:
       - name: Run cross-platform verification
         run: python reference-impl/python/verify_vectors.py
 
+      - name: Run nonce conformance tests
+        run: python conformance-tests/nonce_conformance.py
+
   test-typescript:
     name: TypeScript Test Vectors
     runs-on: ubuntu-latest

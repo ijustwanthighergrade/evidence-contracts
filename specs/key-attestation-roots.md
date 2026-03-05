@@ -207,6 +207,139 @@ Revocation handled via:
 }
 ```
 
+## Dual Root Validation Logic
+
+During the transition period (2026-02-01 to 2026-04-10), implement dual validation:
+
+```kotlin
+fun verifyAttestationChainDualRoot(
+    chain: List<X509Certificate>,
+    now: Instant = Instant.now()
+): AttestationResult {
+    val LEGACY_CUTOFF = Instant.parse("2026-04-10T00:00:00Z")
+
+    // Try new root first
+    if (verifyChainAgainstRoot(chain, GOOGLE_ROOT_2)) {
+        metrics.increment("attestation_root_v2_used")
+        return AttestationResult.valid(rootVersion = "v2")
+    }
+
+    // During transition, allow legacy root
+    if (now.isBefore(LEGACY_CUTOFF)) {
+        if (verifyChainAgainstRoot(chain, GOOGLE_ROOT_1)) {
+            metrics.increment("attestation_root_v1_used")
+
+            // Warn if getting close to cutoff
+            val daysRemaining = ChronoUnit.DAYS.between(now, LEGACY_CUTOFF)
+            if (daysRemaining < 14) {
+                log.warn("Device using legacy root with $daysRemaining days until cutoff")
+            }
+
+            return AttestationResult.valid(
+                rootVersion = "v1",
+                warning = "LEGACY_ROOT_EXPIRING"
+            )
+        }
+    }
+
+    // After cutoff, only v2 accepted
+    if (now.isAfter(LEGACY_CUTOFF) && verifyChainAgainstRoot(chain, GOOGLE_ROOT_1)) {
+        metrics.increment("attestation_root_v1_rejected_after_cutoff")
+        return AttestationResult.invalid(
+            reason = "LEGACY_ROOT_EXPIRED",
+            message = "Device using deprecated attestation root"
+        )
+    }
+
+    return AttestationResult.invalid(reason = "UNTRUSTED_ROOT")
+}
+```
+
+## Monitoring and Alerts
+
+### Key Metrics
+
+| Metric | Description | Alert Threshold |
+|--------|-------------|-----------------|
+| `attestation_root_v1_used` | Legacy root usage count | > 10% after 2026-03-15 |
+| `attestation_root_v2_used` | New root usage count | Baseline tracking |
+| `attestation_failure_rate` | Verification failure rate | > 5% |
+| `attestation_root_v1_rejected_after_cutoff` | Post-cutoff legacy rejections | Any (expected initially) |
+
+### Alert Rules
+
+```yaml
+groups:
+  - name: key_attestation
+    rules:
+      - alert: HighLegacyRootUsage
+        expr: |
+          rate(attestation_root_v1_used[1h]) /
+          (rate(attestation_root_v1_used[1h]) + rate(attestation_root_v2_used[1h])) > 0.1
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "High legacy attestation root usage"
+          description: "More than 10% of attestations using legacy root"
+
+      - alert: AttestationFailureSpike
+        expr: rate(attestation_failure_rate[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High attestation failure rate"
+          description: "May indicate root rotation issue or attack"
+
+      - alert: LegacyCutoffApproaching
+        expr: (1712707200 - time()) / 86400 < 7  # 7 days before 2026-04-10
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Legacy root cutoff in less than 7 days"
+```
+
+## App Update Strategy
+
+### Timeline
+
+| Date | Action |
+|------|--------|
+| 2026-03-01 | Release app version with both roots |
+| 2026-03-15 | Show update prompt to users on old versions |
+| 2026-04-01 | Block old app versions from creating new sessions |
+| 2026-04-10 | Legacy root support removed |
+
+### Implementation
+
+```kotlin
+// In Session API response
+data class SessionResponse(
+    val sessionId: String,
+    // ...
+    val clientUpdateRequired: Boolean,
+    val clientUpdateReason: String?,
+    val minRequiredVersion: String
+)
+
+// Server-side check
+fun checkClientVersion(appVersion: String, attestationRoot: String): ClientStatus {
+    val MIN_VERSION_FOR_NEW_ROOT = "2.0.0"
+
+    if (attestationRoot == "v1" && appVersion < MIN_VERSION_FOR_NEW_ROOT) {
+        return ClientStatus(
+            updateRequired = true,
+            reason = "App update required for continued service after 2026-04-10",
+            deadline = "2026-04-10"
+        )
+    }
+
+    return ClientStatus(updateRequired = false)
+}
+```
+
 ## Audit Requirements
 
 - [ ] Trust store includes all current roots
@@ -215,3 +348,7 @@ Revocation handled via:
 - [ ] Certificate chain validation tested with known-good chains
 - [ ] Rejection tested with tampered chains
 - [ ] Security level enforcement tested
+- [ ] Dual validation logic tested with both root types
+- [ ] Monitoring dashboards configured
+- [ ] Alert rules deployed
+- [ ] App update mechanism tested

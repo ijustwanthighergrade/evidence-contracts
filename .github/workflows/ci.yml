@@ -22,13 +22,13 @@ jobs:
         run: npm install -g ajv-cli ajv-formats
 
       - name: Validate manifest.v2.schema.json
-        run: ajv compile -s schemas/manifest.v2.schema.json --spec=draft2020
+        run: ajv compile -s schemas/manifest.v2.schema.json --spec=draft2020 -c ajv-formats
 
       - name: Validate event.v2.schema.json
-        run: ajv compile -s schemas/event.v2.schema.json --spec=draft2020
+        run: ajv compile -s schemas/event.v2.schema.json --spec=draft2020 -c ajv-formats
 
       - name: Validate proof.v1.schema.json
-        run: ajv compile -s schemas/proof.v1.schema.json --spec=draft2020
+        run: ajv compile -s schemas/proof.v1.schema.json --spec=draft2020 -c ajv-formats
 
   test-python:
     name: Python Test Vectors
@@ -87,6 +87,9 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
+
+      - name: Generate Gradle Wrapper
+        run: gradle wrapper
 
       - name: Run tests
         run: ./gradlew test

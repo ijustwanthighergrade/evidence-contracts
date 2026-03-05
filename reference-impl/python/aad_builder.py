@@ -164,7 +164,8 @@ def validate_test_vector(
 
 if __name__ == "__main__":
     # Quick self-test with test vector aad-001
-    expected = "0101550e8400e29b41d4a716446655440000000000000000000002d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592"
+    # Fixed: manifestVer is 2 bytes = 0002, not 02
+    expected = "0101550e8400e29b41d4a71644665544000000000000000000000002d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592"
 
     result = validate_test_vector(
         expected_hex=expected,
@@ -177,7 +178,7 @@ if __name__ == "__main__":
     )
 
     if result:
-        print("✓ Test vector aad-001 passed")
+        print("[PASS] Test vector aad-001 passed")
     else:
-        print("✗ Test vector aad-001 FAILED")
+        print("[FAIL] Test vector aad-001 FAILED")
         exit(1)

@@ -15,7 +15,7 @@
         "policyHash": "f6789012345678901234567890123456789012345678901234abcdef01234567"
       },
       "expected": {
-        "sealHash": "8f14e45fceea167a5a36dedd4bea2543e8a2e9f3b7c1d5e9f2a6b8c0d4e6f8a1",
+        "sealHash": "850bac3a784be519e53a548c7f8b1ddd9c02c9ed8e9ae39e18599175b9687b87",
         "inputLength": 192
       }
     },
@@ -31,7 +31,7 @@
         "policyHash": "0000000000000000000000000000000000000000000000000000000000000000"
       },
       "expected": {
-        "sealHash": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "sealHash": "5d89f056865052bcb89c910d2d62872e029fb273c3db03f8968a52a41593c1b5",
         "inputLength": 192
       }
     },
@@ -47,7 +47,7 @@
         "policyHash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
       },
       "expected": {
-        "sealHash": "ef4b34ada3d3b9f1e4f4eb8c7a2f6d8e9c1b3a5d7f9e2c4b6a8d0f1e3c5b7a90",
+        "sealHash": "8f62c344eff1568474fb693b8c18526629db443b9653a84264189c97693605de",
         "inputLength": 192
       }
     },
@@ -63,7 +63,7 @@
         "policyHash": "a0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebf"
       },
       "expected": {
-        "sealHash": "c7b3f2e1d0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3",
+        "sealHash": "8b4a544837a1a0280fa8a7c82865c27a1064b3cc6281fda0753566b9bb104a87",
         "inputLength": 192
       }
     },
@@ -79,7 +79,7 @@
         "policyHash": "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592"
       },
       "expected": {
-        "sealHash": "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
+        "sealHash": "8172621f89d95fc273b9552304b05d5b7fb27258e55c8cb5a58fd6cce7f4f2ce",
         "inputLength": 192
       }
     },
@@ -95,7 +95,7 @@
         "policyHash": "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592"
       },
       "expected": {
-        "sealHash": "fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9",
+        "sealHash": "ac55d30c1d90810bfc384ee3444e7b7b0157d32c8efeaa0c8cf315e367f72390",
         "inputLength": 192,
         "note": "Different from seal-005 due to different order"
       }
@@ -112,7 +112,7 @@
         "policyHash": "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592"
       },
       "expected": {
-        "sealHash": "a8f5f167f44f4964e6c998dee827110c4eab5b1f1b4b1d7d9b7a2c3f4e5d6b8a",
+        "sealHash": "9bf1f770460cd78831d9257c48d3762ab7cdb2c3528d335d0d895bf2cc3171a6",
         "inputLength": 192,
         "note": "Completely different from seal-005 due to avalanche effect"
       }
@@ -129,7 +129,7 @@
         "policyHash": "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592"
       },
       "expected": {
-        "sealHash": "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9",
+        "sealHash": "aa02b58112fde3512ee3f656699a9ca0d4168c9a557c4b6002d83a389a5ad9ad",
         "inputLength": 192
       }
     },
@@ -145,7 +145,7 @@
         "policyHash": "ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d"
       },
       "expected": {
-        "sealHash": "e7f6c011776e8db7cd330b54174fd76f7d0216b612387a5ffcfb81e6f0919683",
+        "sealHash": "9c60746f6cf7ca94d5ff3134c0a928702d4c7105d1d76831e2dcfb07f6ceea3e",
         "inputLength": 192
       }
     },

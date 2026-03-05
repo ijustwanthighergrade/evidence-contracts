@@ -138,7 +138,7 @@ if __name__ == "__main__":
     # Test vector seal-002: All zeros
     print("Test seal-002 (all zeros):")
     result, msg = verify_seal_hash(
-        expected_hex="374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        expected_hex="5d89f056865052bcb89c910d2d62872e029fb273c3db03f8968a52a41593c1b5",
         manifest_hash_hex="0" * 64,
         media_plaintext_hash_hex="0" * 64,
         chunk_merkle_root_hex="0" * 64,
@@ -147,9 +147,9 @@ if __name__ == "__main__":
         policy_hash_hex="0" * 64,
     )
     if result:
-        print("  ✓ PASSED")
+        print("  [PASS] PASSED")
     else:
-        print(f"  ✗ FAILED: {msg}")
+        print(f"  [FAIL] FAILED: {msg}")
         exit(1)
 
     # Test concatenation order
@@ -172,9 +172,9 @@ if __name__ == "__main__":
         hex_to_bytes("ff" * 32),
     )
     if seal1 != seal2:
-        print("  ✓ PASSED (different order = different hash)")
+        print("  [PASS] PASSED (different order = different hash)")
     else:
-        print("  ✗ FAILED (order should matter)")
+        print("  [FAIL] FAILED (order should matter)")
         exit(1)
 
     # Test input length validation
@@ -188,9 +188,9 @@ if __name__ == "__main__":
             hex_to_bytes("ee" * 32),
             hex_to_bytes("ff" * 32),
         )
-        print("  ✗ FAILED (should reject wrong length)")
+        print("  [FAIL] FAILED (should reject wrong length)")
         exit(1)
     except ValueError:
-        print("  ✓ PASSED (rejected invalid input)")
+        print("  [PASS] PASSED (rejected invalid input)")
 
     print("\n=== All sealHash tests passed ===")

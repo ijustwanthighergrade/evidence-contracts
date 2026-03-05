@@ -69,7 +69,7 @@
         "chunkIndex": 9007199254740991
       },
       "expected": {
-        "nonceHex": "123456780001ffffffffffff",
+        "nonceHex": "12345678001fffffffffffff",
         "nonceLength": 12,
         "note": "Number.MAX_SAFE_INTEGER = 2^53 - 1"
       }

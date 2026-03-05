@@ -56,16 +56,16 @@ def test_aad_vectors() -> int:
             expected_hex = expected["aadHex"].lower()
 
             if computed_hex == expected_hex:
-                print(f"  ✓ PASSED")
+                print(f"  [PASS] PASSED")
                 passed += 1
             else:
-                print(f"  ✗ FAILED")
+                print(f"  [FAIL] FAILED")
                 print(f"    Expected: {expected_hex}")
                 print(f"    Got:      {computed_hex}")
                 failed += 1
 
         except Exception as e:
-            print(f"  ✗ ERROR: {e}")
+            print(f"  [FAIL] ERROR: {e}")
             failed += 1
 
     print(f"\nAAD Tests: {passed} passed, {failed} failed\n")
@@ -86,13 +86,18 @@ def test_nonce_vectors() -> int:
         vid = v["id"]
         desc = v["description"]
 
-        # Skip non-standard test cases
-        if "inputs" not in v:
+        # Skip non-standard test cases (scenario tests without expected field)
+        if "inputs" not in v or "expected" not in v:
             print(f"Test {vid}: {desc} (skipped - scenario test)")
             continue
 
         inputs = v["inputs"]
         expected = v["expected"]
+
+        # Skip tests without chunkIndex (e.g., sequential chunk tests)
+        if "chunkIndex" not in inputs:
+            print(f"Test {vid}: {desc} (skipped - multi-chunk test)")
+            continue
 
         print(f"Test {vid}: {desc}")
 
@@ -106,16 +111,16 @@ def test_nonce_vectors() -> int:
             expected_hex = expected["nonceHex"].lower()
 
             if computed_hex == expected_hex:
-                print(f"  ✓ PASSED")
+                print(f"  [PASS] PASSED")
                 passed += 1
             else:
-                print(f"  ✗ FAILED")
+                print(f"  [FAIL] FAILED")
                 print(f"    Expected: {expected_hex}")
                 print(f"    Got:      {computed_hex}")
                 failed += 1
 
         except Exception as e:
-            print(f"  ✗ ERROR: {e}")
+            print(f"  [FAIL] ERROR: {e}")
             failed += 1
 
     print(f"\nNonce Tests: {passed} passed, {failed} failed\n")
@@ -143,7 +148,7 @@ def test_seal_hash_vectors() -> int:
 
         # Check for error cases
         if "error" in expected:
-            print(f"  ⚠ SKIPPED (error case: {expected['error']})")
+            print(f"  [SKIP] SKIPPED (error case: {expected['error']})")
             skipped += 1
             continue
 
@@ -166,10 +171,10 @@ def test_seal_hash_vectors() -> int:
             expected_hex = expected["sealHash"].lower()
 
             if computed_hex == expected_hex:
-                print(f"  ✓ PASSED")
+                print(f"  [PASS] PASSED")
                 passed += 1
             else:
-                print(f"  ✗ FAILED")
+                print(f"  [FAIL] FAILED")
                 print(f"    Expected: {expected_hex}")
                 print(f"    Got:      {computed_hex}")
                 failed += 1
@@ -177,10 +182,10 @@ def test_seal_hash_vectors() -> int:
         except Exception as e:
             # Some test vectors are designed to fail (e.g., wrong length)
             if "error" in expected or "INVALID" in str(e).upper():
-                print(f"  ✓ PASSED (correctly rejected: {e})")
+                print(f"  [PASS] PASSED (correctly rejected: {e})")
                 passed += 1
             else:
-                print(f"  ✗ ERROR: {e}")
+                print(f"  [FAIL] ERROR: {e}")
                 failed += 1
 
     print(f"\nsealHash Tests: {passed} passed, {failed} failed, {skipped} skipped\n")

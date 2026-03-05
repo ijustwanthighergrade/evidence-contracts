@@ -1,0 +1,284 @@
+openapi: 3.1.0
+info:
+  title: Evidence Platform Upload API
+  description: |
+    Evidence upload and sealing API.
+    Handles chunk uploads and evidence completion.
+  version: 2.0.0
+
+servers:
+  - url: https://api.evidence.example.com/api/v2
+    description: Production
+
+paths:
+  /evidence/{evidenceId}/uploads:
+    post:
+      operationId: initiateUpload
+      summary: Initiate evidence upload
+      tags:
+        - Uploads
+      parameters:
+        - $ref: '#/components/parameters/evidenceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitiateUploadRequest'
+      responses:
+        '201':
+          description: Upload initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitiateUploadResponse'
+
+  /evidence/{evidenceId}/uploads/{uploadId}/parts/{partNumber}:
+    put:
+      operationId: uploadPart
+      summary: Upload a chunk
+      tags:
+        - Uploads
+      parameters:
+        - $ref: '#/components/parameters/evidenceId'
+        - $ref: '#/components/parameters/uploadId'
+        - $ref: '#/components/parameters/partNumber'
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: Part uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartUploadResponse'
+        '409':
+          description: Part already uploaded with different content
+
+  /evidence/{evidenceId}/uploads/{uploadId}/complete:
+    post:
+      operationId: completeUpload
+      summary: Complete evidence upload and seal
+      tags:
+        - Uploads
+      parameters:
+        - $ref: '#/components/parameters/evidenceId'
+        - $ref: '#/components/parameters/uploadId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteUploadRequest'
+      responses:
+        '200':
+          description: Evidence sealed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompleteUploadResponse'
+        '400':
+          description: Validation failed
+        '409':
+          description: Missing parts or hash mismatch
+
+components:
+  parameters:
+    evidenceId:
+      name: evidenceId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    uploadId:
+      name: uploadId
+      in: path
+      required: true
+      schema:
+        type: string
+
+    partNumber:
+      name: partNumber
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 0
+
+  schemas:
+    InitiateUploadRequest:
+      type: object
+      required:
+        - sessionId
+        - expectedChunkCount
+        - mediaPlaintextHash
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        expectedChunkCount:
+          type: integer
+          minimum: 1
+        mediaPlaintextHash:
+          type: string
+          pattern: '^[A-Fa-f0-9]{64}$'
+        mimeType:
+          type: string
+          example: "audio/wav"
+
+    InitiateUploadResponse:
+      type: object
+      required:
+        - uploadId
+        - evidenceId
+        - presignedUrls
+      properties:
+        uploadId:
+          type: string
+        evidenceId:
+          type: string
+          format: uuid
+        presignedUrls:
+          type: array
+          items:
+            $ref: '#/components/schemas/PresignedUrl'
+        expiresAt:
+          type: string
+          format: date-time
+
+    PresignedUrl:
+      type: object
+      required:
+        - partNumber
+        - url
+      properties:
+        partNumber:
+          type: integer
+        url:
+          type: string
+          format: uri
+        expiresAt:
+          type: string
+          format: date-time
+
+    PartUploadResponse:
+      type: object
+      required:
+        - partNumber
+        - etag
+        - receivedHash
+      properties:
+        partNumber:
+          type: integer
+        etag:
+          type: string
+        receivedHash:
+          type: string
+          pattern: '^[A-Fa-f0-9]{64}$'
+          description: SHA-256 of received ciphertext
+
+    CompleteUploadRequest:
+      type: object
+      required:
+        - manifest
+        - manifestHash
+        - mediaPlaintextHash
+        - ciphertextChunkMerkleRoot
+        - finalEventHash
+        - sealHash
+        - wrappedDek
+        - parts
+      properties:
+        manifest:
+          type: object
+          description: Full manifest JSON (without integrity.sealHash)
+        manifestHash:
+          type: string
+          pattern: '^[A-Fa-f0-9]{64}$'
+        mediaPlaintextHash:
+          type: string
+          pattern: '^[A-Fa-f0-9]{64}$'
+        ciphertextChunkMerkleRoot:
+          type: string
+          pattern: '^[A-Fa-f0-9]{64}$'
+        finalEventHash:
+          type: string
+          pattern: '^[A-Fa-f0-9]{64}$'
+        sealHash:
+          type: string
+          pattern: '^[A-Fa-f0-9]{64}$'
+        deviceSignature:
+          type: string
+          description: Base64-encoded ECDSA signature over sealHash
+        wrappedDek:
+          type: string
+          description: Base64-encoded wrapped DEK
+        parts:
+          type: array
+          items:
+            $ref: '#/components/schemas/PartInfo'
+
+    PartInfo:
+      type: object
+      required:
+        - partNumber
+        - etag
+        - hash
+      properties:
+        partNumber:
+          type: integer
+        etag:
+          type: string
+        hash:
+          type: string
+          pattern: '^[A-Fa-f0-9]{64}$'
+
+    CompleteUploadResponse:
+      type: object
+      required:
+        - evidenceId
+        - status
+        - provisionalProof
+      properties:
+        evidenceId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [STORED_IMMUTABLE]
+        provisionalProof:
+          $ref: '#/components/schemas/ProvisionalProof'
+        storageReceipt:
+          type: string
+
+    ProvisionalProof:
+      type: object
+      required:
+        - logEntryId
+        - signedTreeHead
+        - provisionalAt
+      properties:
+        logEntryId:
+          type: string
+        signedTreeHead:
+          type: object
+          properties:
+            treeSize:
+              type: integer
+            rootHash:
+              type: string
+            timestamp:
+              type: string
+              format: date-time
+            signature:
+              type: string
+        provisionalAt:
+          type: string
+          format: date-time

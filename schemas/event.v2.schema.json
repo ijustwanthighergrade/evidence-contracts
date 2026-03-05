@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evidence-contracts.example.com/schemas/event.v2.schema.json",
+  "title": "Event Chain v2",
+  "description": "Immutable event chain for evidence lifecycle tracking",
+  "type": "object",
+  "required": ["version", "evidenceId", "events"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^2\\.[0-9]+$"
+    },
+    "evidenceId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Event"
+      },
+      "minItems": 1
+    },
+    "finalEventHash": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{64}$",
+      "description": "SHA-256 of the last event (chain head)"
+    }
+  },
+  "$defs": {
+    "Event": {
+      "type": "object",
+      "required": ["eventId", "eventType", "timestamp", "prevHash", "eventHash"],
+      "properties": {
+        "eventId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "eventType": {
+          "$ref": "#/$defs/EventType"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "prevHash": {
+          "type": "string",
+          "pattern": "^[A-Fa-f0-9]{64}$",
+          "description": "SHA-256 of previous event (null hash for genesis)"
+        },
+        "eventHash": {
+          "type": "string",
+          "pattern": "^[A-Fa-f0-9]{64}$",
+          "description": "SHA-256(eventType || timestamp || prevHash || payload)"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "EventType": {
+      "type": "string",
+      "enum": [
+        "CAPTURE_STARTED",
+        "CAPTURE_PAUSED",
+        "CAPTURE_RESUMED",
+        "CAPTURE_ENDED",
+        "AUDIO_FRAME",
+        "VIDEO_FRAME",
+        "IMU_SAMPLE",
+        "LOCATION_UPDATE",
+        "TDOA_MEASUREMENT",
+        "SLIDE_SESSION",
+        "LOCALIZATION_RESULT",
+        "CHIRP_DETECTED",
+        "DIAGNOSTIC",
+        "USER_ANNOTATION",
+        "SEAL_INITIATED",
+        "SEAL_COMPLETED"
+      ]
+    },
+    "AudioFramePayload": {
+      "type": "object",
+      "properties": {
+        "frameIndex": { "type": "integer" },
+        "timestampMs": { "type": "integer" },
+        "durationMs": { "type": "integer" },
+        "peakDb": { "type": "number" },
+        "rmsDb": { "type": "number" }
+      }
+    },
+    "TDoAMeasurementPayload": {
+      "type": "object",
+      "properties": {
+        "tdoaUs": { "type": "number", "description": "TDoA in microseconds" },
+        "theta": { "type": "number", "description": "Angle in degrees" },
+        "confidence": { "type": "number" },
+        "mode": { "type": "string", "enum": ["basic", "refined"] }
+      }
+    },
+    "SlideSessionPayload": {
+      "type": "object",
+      "properties": {
+        "sessionId": { "type": "integer" },
+        "startTimestampNs": { "type": "integer" },
+        "endTimestampNs": { "type": "integer" },
+        "rawDisplacement": { "type": "number" },
+        "calibratedDisplacement": { "type": "number" },
+        "zRotationRad": { "type": "number" },
+        "isReliable": { "type": "boolean" }
+      }
+    },
+    "LocalizationResultPayload": {
+      "type": "object",
+      "properties": {
+        "method": { "type": "string", "enum": ["augmented_tdoa", "passive"] },
+        "position": {
+          "type": "object",
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" },
+            "z": { "type": ["number", "null"] }
+          }
+        },
+        "distance": { "type": "number" },
+        "residual": { "type": "number" },
+        "observationCount": { "type": "integer" }
+      }
+    },
+    "ChirpDetectedPayload": {
+      "type": "object",
+      "properties": {
+        "mic": { "type": "string", "enum": ["mic1", "mic2"] },
+        "timestampMs": { "type": "integer" },
+        "prominence": { "type": "number" },
+        "tdoaUs": { "type": "number" }
+      }
+    },
+    "DiagnosticPayload": {
+      "type": "object",
+      "properties": {
+        "category": { "type": "string" },
+        "message": { "type": "string" },
+        "data": { "type": "object" }
+      }
+    }
+  }
+}

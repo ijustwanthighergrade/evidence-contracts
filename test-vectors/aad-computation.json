@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Official test vectors for AAD computation",
+  "version": "1.0",
+  "structure": {
+    "totalBytes": 60,
+    "fields": [
+      {"name": "aeadSuiteId", "offset": 0, "size": 1, "type": "uint8"},
+      {"name": "hashSuiteId", "offset": 1, "size": 1, "type": "uint8"},
+      {"name": "evidenceId", "offset": 2, "size": 16, "type": "uuid-be"},
+      {"name": "chunkIndex", "offset": 18, "size": 8, "type": "uint64-be"},
+      {"name": "manifestVer", "offset": 26, "size": 2, "type": "uint16-be"},
+      {"name": "policyHash", "offset": 28, "size": 32, "type": "bytes"}
+    ]
+  },
+  "vectors": [
+    {
+      "id": "aad-001",
+      "description": "Typical case: AES-256-GCM, SHA-256, first chunk",
+      "inputs": {
+        "aeadSuiteId": 1,
+        "hashSuiteId": 1,
+        "evidenceId": "550e8400-e29b-41d4-a716-446655440000",
+        "chunkIndex": 0,
+        "manifestVer": 2,
+        "policyHash": "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592"
+      },
+      "expected": {
+        "aadHex": "0101550e8400e29b41d4a716446655440000000000000000000002d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592",
+        "aadLength": 60
+      }
+    },
+    {
+      "id": "aad-002",
+      "description": "Second chunk",
+      "inputs": {
+        "aeadSuiteId": 1,
+        "hashSuiteId": 1,
+        "evidenceId": "550e8400-e29b-41d4-a716-446655440000",
+        "chunkIndex": 1,
+        "manifestVer": 2,
+        "policyHash": "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592"
+      },
+      "expected": {
+        "aadHex": "0101550e8400e29b41d4a716446655440000000000000000000102d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592",
+        "aadLength": 60
+      }
+    },
+    {
+      "id": "aad-003",
+      "description": "Large chunk index (10000)",
+      "inputs": {
+        "aeadSuiteId": 1,
+        "hashSuiteId": 1,
+        "evidenceId": "550e8400-e29b-41d4-a716-446655440000",
+        "chunkIndex": 10000,
+        "manifestVer": 2,
+        "policyHash": "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592"
+      },
+      "expected": {
+        "aadHex": "0101550e8400e29b41d4a716446655440000000000000000271002d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592",
+        "aadLength": 60,
+        "note": "chunkIndex 10000 = 0x2710"
+      }
+    },
+    {
+      "id": "aad-004",
+      "description": "AES-256-GCM-SIV variant",
+      "inputs": {
+        "aeadSuiteId": 2,
+        "hashSuiteId": 1,
+        "evidenceId": "550e8400-e29b-41d4-a716-446655440000",
+        "chunkIndex": 0,
+        "manifestVer": 2,
+        "policyHash": "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592"
+      },
+      "expected": {
+        "aadHex": "0201550e8400e29b41d4a716446655440000000000000000000002d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592",
+        "aadLength": 60
+      }
+    },
+    {
+      "id": "aad-005",
+      "description": "SHA-3-256 hash suite",
+      "inputs": {
+        "aeadSuiteId": 1,
+        "hashSuiteId": 2,
+        "evidenceId": "550e8400-e29b-41d4-a716-446655440000",
+        "chunkIndex": 0,
+        "manifestVer": 2,
+        "policyHash": "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592"
+      },
+      "expected": {
+        "aadHex": "0102550e8400e29b41d4a716446655440000000000000000000002d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592",
+        "aadLength": 60
+      }
+    },
+    {
+      "id": "aad-006",
+      "description": "UUID byte order verification (critical!)",
+      "inputs": {
+        "aeadSuiteId": 1,
+        "hashSuiteId": 1,
+        "evidenceId": "12345678-1234-5678-1234-567812345678",
+        "chunkIndex": 0,
+        "manifestVer": 2,
+        "policyHash": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "expected": {
+        "aadHex": "010112345678123456781234567812345678000000000000000000020000000000000000000000000000000000000000000000000000000000000000",
+        "aadLength": 60,
+        "note": "UUID bytes must be in network order (big-endian), NOT .NET Guid order"
+      }
+    },
+    {
+      "id": "aad-007",
+      "description": "Maximum chunk index",
+      "inputs": {
+        "aeadSuiteId": 1,
+        "hashSuiteId": 1,
+        "evidenceId": "550e8400-e29b-41d4-a716-446655440000",
+        "chunkIndex": 9007199254740991,
+        "manifestVer": 2,
+        "policyHash": "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592"
+      },
+      "expected": {
+        "aadHex": "0101550e8400e29b41d4a7164466554400000001ffffffffffff02d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592",
+        "aadLength": 60,
+        "note": "Number.MAX_SAFE_INTEGER in JavaScript"
+      }
+    },
+    {
+      "id": "aad-008",
+      "description": "All zeros policy hash",
+      "inputs": {
+        "aeadSuiteId": 1,
+        "hashSuiteId": 1,
+        "evidenceId": "00000000-0000-0000-0000-000000000000",
+        "chunkIndex": 0,
+        "manifestVer": 2,
+        "policyHash": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "expected": {
+        "aadHex": "010100000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000",
+        "aadLength": 60
+      }
+    }
+  ],
+  "commonMistakes": [
+    {
+      "mistake": "Using .NET Guid.ToByteArray() for UUID",
+      "consequence": "Bytes 0-3 and 4-5 and 6-7 are reversed",
+      "fix": "Manually construct bytes in network order"
+    },
+    {
+      "mistake": "Using little-endian for chunkIndex",
+      "consequence": "Chunk 256 becomes chunk 1 on different platform",
+      "fix": "Always use big-endian (network order)"
+    },
+    {
+      "mistake": "Padding policyHash with spaces",
+      "consequence": "AAD mismatch, decryption fails",
+      "fix": "Use raw bytes, no padding"
+    }
+  ]
+}

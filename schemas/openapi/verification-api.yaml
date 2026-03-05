@@ -1,0 +1,309 @@
+openapi: 3.1.0
+info:
+  title: Evidence Platform Verification API
+  description: |
+    Evidence verification and proof retrieval API.
+    Provides proof status, verification, and offline bundle generation.
+  version: 2.0.0
+
+servers:
+  - url: https://api.evidence.example.com/api/v2
+    description: Production
+
+paths:
+  /evidence/{evidenceId}/proof:
+    get:
+      operationId: getProof
+      summary: Get current proof status
+      tags:
+        - Verification
+      parameters:
+        - $ref: '#/components/parameters/evidenceId'
+      responses:
+        '200':
+          description: Proof status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProofResponse'
+        '404':
+          description: Evidence not found
+
+  /evidence/{evidenceId}/proof/history:
+    get:
+      operationId: getProofHistory
+      summary: Get proof state transition history
+      tags:
+        - Verification
+      parameters:
+        - $ref: '#/components/parameters/evidenceId'
+      responses:
+        '200':
+          description: Proof history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProofHistoryResponse'
+
+  /evidence/{evidenceId}/verify:
+    post:
+      operationId: verifyEvidence
+      summary: Perform full verification
+      description: |
+        Server-side verification of evidence integrity.
+        Checks all hashes, signatures, and proofs.
+      tags:
+        - Verification
+      parameters:
+        - $ref: '#/components/parameters/evidenceId'
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationResponse'
+
+  /evidence/{evidenceId}/bundle:
+    get:
+      operationId: getOfflineBundle
+      summary: Download offline verification bundle
+      description: |
+        Download a self-contained bundle for offline verification.
+        Includes manifest, proofs, and verification instructions.
+      tags:
+        - Verification
+      parameters:
+        - $ref: '#/components/parameters/evidenceId'
+      responses:
+        '200':
+          description: Offline bundle
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Evidence not found
+        '425':
+          description: Evidence not yet finalized (Too Early)
+
+components:
+  parameters:
+    evidenceId:
+      name: evidenceId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    ProofResponse:
+      type: object
+      required:
+        - evidenceId
+        - status
+        - updatedAt
+      properties:
+        evidenceId:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/ProofStatus'
+        updatedAt:
+          type: string
+          format: date-time
+        manifest:
+          type: object
+          description: Full manifest
+        storage:
+          $ref: '#/components/schemas/StorageProof'
+        transparencyLog:
+          $ref: '#/components/schemas/TransparencyLogProof'
+        tsa:
+          $ref: '#/components/schemas/TsaProof'
+        publicAnchor:
+          $ref: '#/components/schemas/PublicAnchorProof'
+
+    ProofStatus:
+      type: string
+      enum:
+        - UPLOADED
+        - PROVISIONAL
+        - ANCHORED_TSA
+        - ANCHORED_PENDING
+        - FINALITY_REACHED
+        - FAILED_RETRYING
+
+    StorageProof:
+      type: object
+      properties:
+        storageReceipt:
+          type: string
+        uploadedAt:
+          type: string
+          format: date-time
+        storageLocation:
+          type: string
+
+    TransparencyLogProof:
+      type: object
+      properties:
+        logEntryId:
+          type: string
+        signedTreeHead:
+          type: object
+          properties:
+            treeSize:
+              type: integer
+            rootHash:
+              type: string
+            timestamp:
+              type: string
+              format: date-time
+            signature:
+              type: string
+        provisionalAt:
+          type: string
+          format: date-time
+        inclusionProof:
+          type: object
+          properties:
+            leafIndex:
+              type: integer
+            hashes:
+              type: array
+              items:
+                type: string
+
+    TsaProof:
+      type: object
+      properties:
+        tsaToken:
+          type: string
+          description: Base64-encoded RFC 3161 timestamp token
+        tsaAt:
+          type: string
+          format: date-time
+        tsaAuthority:
+          type: string
+
+    PublicAnchorProof:
+      type: object
+      properties:
+        txId:
+          type: string
+        submittedAt:
+          type: string
+          format: date-time
+        chain:
+          type: string
+          enum: [bitcoin, ethereum, ots]
+        blockHeight:
+          type: integer
+        confirmations:
+          type: integer
+        finalizedAt:
+          type: string
+          format: date-time
+        inclusionProof:
+          type: object
+          properties:
+            merkleRoot:
+              type: string
+            merkleProof:
+              type: array
+              items:
+                type: string
+            leafIndex:
+              type: integer
+
+    ProofHistoryResponse:
+      type: object
+      required:
+        - evidenceId
+        - transitions
+      properties:
+        evidenceId:
+          type: string
+          format: uuid
+        transitions:
+          type: array
+          items:
+            $ref: '#/components/schemas/StateTransition'
+
+    StateTransition:
+      type: object
+      required:
+        - fromStatus
+        - toStatus
+        - timestamp
+      properties:
+        fromStatus:
+          type: string
+        toStatus:
+          $ref: '#/components/schemas/ProofStatus'
+        timestamp:
+          type: string
+          format: date-time
+        durationMs:
+          type: integer
+        details:
+          type: object
+
+    VerificationResponse:
+      type: object
+      required:
+        - evidenceId
+        - verdict
+        - checks
+      properties:
+        evidenceId:
+          type: string
+          format: uuid
+        verdict:
+          $ref: '#/components/schemas/Verdict'
+        checks:
+          type: array
+          items:
+            $ref: '#/components/schemas/VerificationCheck'
+        verifiedAt:
+          type: string
+          format: date-time
+
+    Verdict:
+      type: object
+      required:
+        - status
+        - credibilityLevel
+      properties:
+        status:
+          type: string
+          enum: [VALID, INVALID, INCONCLUSIVE]
+        credibilityLevel:
+          type: string
+          enum: [HIGH, MEDIUM, LOW, NONE]
+        anomalyFlags:
+          type: array
+          items:
+            type: string
+        summary:
+          type: string
+
+    VerificationCheck:
+      type: object
+      required:
+        - name
+        - status
+      properties:
+        name:
+          type: string
+          example: "seal_hash_verification"
+        status:
+          type: string
+          enum: [PASS, FAIL, SKIP, WARN]
+        message:
+          type: string
+        details:
+          type: object

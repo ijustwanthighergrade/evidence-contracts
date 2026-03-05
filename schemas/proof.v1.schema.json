@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evidence-contracts.example.com/schemas/proof.v1.schema.json",
+  "title": "Proof Status v1",
+  "description": "Proof status and anchoring information for evidence",
+  "type": "object",
+  "required": ["evidenceId", "status", "updatedAt"],
+  "properties": {
+    "evidenceId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "status": {
+      "$ref": "#/$defs/ProofStatus"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "storage": {
+      "$ref": "#/$defs/StorageProof"
+    },
+    "transparencyLog": {
+      "$ref": "#/$defs/TransparencyLogProof"
+    },
+    "tsa": {
+      "$ref": "#/$defs/TsaProof"
+    },
+    "publicAnchor": {
+      "$ref": "#/$defs/PublicAnchorProof"
+    },
+    "failure": {
+      "$ref": "#/$defs/FailureInfo"
+    }
+  },
+  "$defs": {
+    "ProofStatus": {
+      "type": "string",
+      "enum": [
+        "UPLOADED",
+        "PROVISIONAL",
+        "ANCHORED_TSA",
+        "ANCHORED_PENDING",
+        "FINALITY_REACHED",
+        "FAILED_RETRYING"
+      ],
+      "description": "Current proof status (see proof-state-machine.md)"
+    },
+    "StorageProof": {
+      "type": "object",
+      "required": ["storageReceipt", "uploadedAt"],
+      "properties": {
+        "storageReceipt": {
+          "type": "string",
+          "description": "WORM storage receipt/ETag"
+        },
+        "uploadedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "storageLocation": {
+          "type": "string",
+          "description": "Storage path/URL"
+        }
+      }
+    },
+    "TransparencyLogProof": {
+      "type": "object",
+      "required": ["logEntryId", "signedTreeHead", "provisionalAt"],
+      "properties": {
+        "logEntryId": {
+          "type": "string",
+          "description": "Entry ID in transparency log"
+        },
+        "signedTreeHead": {
+          "type": "object",
+          "properties": {
+            "treeSize": { "type": "integer" },
+            "rootHash": { "type": "string" },
+            "timestamp": { "type": "string", "format": "date-time" },
+            "signature": { "type": "string" }
+          }
+        },
+        "provisionalAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "inclusionProof": {
+          "type": "object",
+          "properties": {
+            "leafIndex": { "type": "integer" },
+            "hashes": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "TsaProof": {
+      "type": "object",
+      "required": ["tsaToken", "tsaAt"],
+      "properties": {
+        "tsaToken": {
+          "type": "string",
+          "description": "Base64-encoded RFC 3161 timestamp token"
+        },
+        "tsaAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "tsaAuthority": {
+          "type": "string",
+          "description": "TSA authority URL"
+        }
+      }
+    },
+    "PublicAnchorProof": {
+      "type": "object",
+      "required": ["txId", "submittedAt"],
+      "properties": {
+        "txId": {
+          "type": "string",
+          "description": "Blockchain transaction ID"
+        },
+        "submittedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "chain": {
+          "type": "string",
+          "enum": ["bitcoin", "ethereum", "ots"],
+          "description": "Blockchain/timestamp service"
+        },
+        "blockHeight": {
+          "type": ["integer", "null"],
+          "description": "Block height (null if pending)"
+        },
+        "confirmations": {
+          "type": ["integer", "null"],
+          "description": "Number of confirmations"
+        },
+        "finalizedAt": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "inclusionProof": {
+          "type": "object",
+          "properties": {
+            "merkleRoot": { "type": "string" },
+            "merkleProof": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "leafIndex": { "type": "integer" }
+          },
+          "description": "Proof that evidence hash is included in anchored Merkle root"
+        }
+      }
+    },
+    "FailureInfo": {
+      "type": "object",
+      "properties": {
+        "failureReason": {
+          "type": "string"
+        },
+        "retryCount": {
+          "type": "integer"
+        },
+        "nextRetryAt": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "lastAttemptAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

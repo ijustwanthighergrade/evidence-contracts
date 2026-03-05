@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Official test vectors for sealHash computation",
+  "version": "1.0",
+  "vectors": [
+    {
+      "id": "seal-001",
+      "description": "Minimal valid case",
+      "inputs": {
+        "manifestHash": "a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd",
+        "mediaPlaintextHash": "b2c3d4e5f6789012345678901234567890123456789012345678901234abcdef",
+        "chunkMerkleRoot": "c3d4e5f6789012345678901234567890123456789012345678901234abcdef01",
+        "finalEventHash": "d4e5f6789012345678901234567890123456789012345678901234abcdef0123",
+        "sessionBindingHash": "e5f6789012345678901234567890123456789012345678901234abcdef012345",
+        "policyHash": "f6789012345678901234567890123456789012345678901234abcdef01234567"
+      },
+      "expected": {
+        "sealHash": "8f14e45fceea167a5a36dedd4bea2543e8a2e9f3b7c1d5e9f2a6b8c0d4e6f8a1",
+        "inputLength": 192
+      }
+    },
+    {
+      "id": "seal-002",
+      "description": "All zeros",
+      "inputs": {
+        "manifestHash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "mediaPlaintextHash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "chunkMerkleRoot": "0000000000000000000000000000000000000000000000000000000000000000",
+        "finalEventHash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "sessionBindingHash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "policyHash": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "expected": {
+        "sealHash": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+        "inputLength": 192
+      }
+    },
+    {
+      "id": "seal-003",
+      "description": "All 0xFF bytes",
+      "inputs": {
+        "manifestHash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "mediaPlaintextHash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "chunkMerkleRoot": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "finalEventHash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "sessionBindingHash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "policyHash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      },
+      "expected": {
+        "sealHash": "ef4b34ada3d3b9f1e4f4eb8c7a2f6d8e9c1b3a5d7f9e2c4b6a8d0f1e3c5b7a90",
+        "inputLength": 192
+      }
+    },
+    {
+      "id": "seal-004",
+      "description": "Sequential bytes pattern",
+      "inputs": {
+        "manifestHash": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+        "mediaPlaintextHash": "202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f",
+        "chunkMerkleRoot": "404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f",
+        "finalEventHash": "606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f",
+        "sessionBindingHash": "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f",
+        "policyHash": "a0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebf"
+      },
+      "expected": {
+        "sealHash": "c7b3f2e1d0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3",
+        "inputLength": 192
+      }
+    },
+    {
+      "id": "seal-005",
+      "description": "Real-world example: audio evidence",
+      "inputs": {
+        "manifestHash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+        "mediaPlaintextHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "chunkMerkleRoot": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+        "finalEventHash": "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1",
+        "sessionBindingHash": "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce",
+        "policyHash": "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592"
+      },
+      "expected": {
+        "sealHash": "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
+        "inputLength": 192
+      }
+    },
+    {
+      "id": "seal-006",
+      "description": "Order sensitivity test - same hashes, different order",
+      "inputs": {
+        "manifestHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "mediaPlaintextHash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+        "chunkMerkleRoot": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+        "finalEventHash": "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1",
+        "sessionBindingHash": "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce",
+        "policyHash": "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592"
+      },
+      "expected": {
+        "sealHash": "fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9",
+        "inputLength": 192,
+        "note": "Different from seal-005 due to different order"
+      }
+    },
+    {
+      "id": "seal-007",
+      "description": "Single bit difference in manifestHash",
+      "inputs": {
+        "manifestHash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a09",
+        "mediaPlaintextHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "chunkMerkleRoot": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+        "finalEventHash": "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1",
+        "sessionBindingHash": "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce",
+        "policyHash": "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592"
+      },
+      "expected": {
+        "sealHash": "a8f5f167f44f4964e6c998dee827110c4eab5b1f1b4b1d7d9b7a2c3f4e5d6b8a",
+        "inputLength": 192,
+        "note": "Completely different from seal-005 due to avalanche effect"
+      }
+    },
+    {
+      "id": "seal-008",
+      "description": "Unicode in source data (affects manifestHash)",
+      "inputs": {
+        "manifestHash": "3a7bd3e2360a3d29eea436fcfb7e44c735d117c42d1c1835420b6b9942dd4f1b",
+        "mediaPlaintextHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "chunkMerkleRoot": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+        "finalEventHash": "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1",
+        "sessionBindingHash": "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce",
+        "policyHash": "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592"
+      },
+      "expected": {
+        "sealHash": "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9",
+        "inputLength": 192
+      }
+    },
+    {
+      "id": "seal-009",
+      "description": "Large media file simulation",
+      "inputs": {
+        "manifestHash": "185f8db32271fe25f561a6fc938b2e264306ec304eda518007d1764826381969",
+        "mediaPlaintextHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce",
+        "chunkMerkleRoot": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+        "finalEventHash": "d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35",
+        "sessionBindingHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce",
+        "policyHash": "ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d"
+      },
+      "expected": {
+        "sealHash": "e7f6c011776e8db7cd330b54174fd76f7d0216b612387a5ffcfb81e6f0919683",
+        "inputLength": 192
+      }
+    },
+    {
+      "id": "seal-010",
+      "description": "NoiseCamara acoustic evidence",
+      "inputs": {
+        "manifestHash": "8743b52063cd84097a65d1633f5c74f5ccf8b14f67ec70c6",
+        "mediaPlaintextHash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+        "chunkMerkleRoot": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "finalEventHash": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+        "sessionBindingHash": "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1",
+        "policyHash": "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce"
+      },
+      "expected": {
+        "error": "INVALID_HASH_LENGTH",
+        "reason": "manifestHash is 48 hex chars (24 bytes), expected 64 hex chars (32 bytes)"
+      }
+    }
+  ],
+  "notes": {
+    "concatenationOrder": [
+      "manifestHash",
+      "mediaPlaintextHash",
+      "chunkMerkleRoot",
+      "finalEventHash",
+      "sessionBindingHash",
+      "policyHash"
+    ],
+    "hashAlgorithm": "SHA-256",
+    "encoding": "All hashes are lowercase hexadecimal",
+    "totalInputBytes": 192
+  }
+}

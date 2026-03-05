@@ -1,0 +1,372 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evidence-contracts.example.com/schemas/manifest.v2.schema.json",
+  "title": "Evidence Manifest v2",
+  "description": "Immutable metadata for a sealed evidence package",
+  "type": "object",
+  "required": [
+    "version",
+    "evidenceId",
+    "createdAt",
+    "device",
+    "capture",
+    "media",
+    "encryption",
+    "integrity",
+    "session"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^2\\.[0-9]+$",
+      "description": "Manifest version (e.g., '2.0')"
+    },
+    "evidenceId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "RFC4122 UUID, unique per evidence"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when evidence was sealed"
+    },
+    "device": {
+      "$ref": "#/$defs/DeviceInfo"
+    },
+    "capture": {
+      "$ref": "#/$defs/CaptureInfo"
+    },
+    "media": {
+      "$ref": "#/$defs/MediaInfo"
+    },
+    "encryption": {
+      "$ref": "#/$defs/EncryptionInfo"
+    },
+    "integrity": {
+      "$ref": "#/$defs/IntegrityInfo"
+    },
+    "session": {
+      "$ref": "#/$defs/SessionInfo"
+    },
+    "acoustics": {
+      "$ref": "#/$defs/AcousticsInfo",
+      "description": "Optional: acoustic localization data from NoiseCamara"
+    },
+    "extensions": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Reserved for future extensions"
+    }
+  },
+  "$defs": {
+    "DeviceInfo": {
+      "type": "object",
+      "required": ["model", "manufacturer", "osVersion", "appVersion", "appSignatureDigest"],
+      "properties": {
+        "model": {
+          "type": "string",
+          "description": "Device model (e.g., 'Pixel 7a')"
+        },
+        "manufacturer": {
+          "type": "string",
+          "description": "Device manufacturer (e.g., 'Google')"
+        },
+        "osVersion": {
+          "type": "string",
+          "description": "Android version (e.g., '14')"
+        },
+        "apiLevel": {
+          "type": "integer",
+          "description": "Android API level (e.g., 34)"
+        },
+        "appVersion": {
+          "type": "string",
+          "description": "App version name (e.g., '1.2.3')"
+        },
+        "appVersionCode": {
+          "type": "integer",
+          "description": "App version code"
+        },
+        "appSignatureDigest": {
+          "type": "string",
+          "pattern": "^[A-Fa-f0-9]{64}$",
+          "description": "SHA-256 of app signing certificate"
+        }
+      }
+    },
+    "CaptureInfo": {
+      "type": "object",
+      "required": ["startedAt", "endedAt", "durationMs", "profile"],
+      "properties": {
+        "startedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Capture start time"
+        },
+        "endedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Capture end time"
+        },
+        "durationMs": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Capture duration in milliseconds"
+        },
+        "profile": {
+          "type": "string",
+          "enum": ["audio_only", "video_only", "audio_video"],
+          "description": "Capture profile"
+        },
+        "location": {
+          "$ref": "#/$defs/LocationInfo"
+        }
+      }
+    },
+    "LocationInfo": {
+      "type": "object",
+      "properties": {
+        "latitude": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "longitude": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        },
+        "accuracy": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Accuracy in meters"
+        },
+        "altitude": {
+          "type": "number",
+          "description": "Altitude in meters"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "MediaInfo": {
+      "type": "object",
+      "required": ["plaintextHash", "plaintextSize", "mimeType"],
+      "properties": {
+        "plaintextHash": {
+          "type": "string",
+          "pattern": "^[A-Fa-f0-9]{64}$",
+          "description": "SHA-256 of original media plaintext"
+        },
+        "plaintextSize": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Size of plaintext in bytes"
+        },
+        "mimeType": {
+          "type": "string",
+          "description": "MIME type (e.g., 'audio/wav', 'video/mp4')"
+        },
+        "audio": {
+          "$ref": "#/$defs/AudioMetadata"
+        },
+        "video": {
+          "$ref": "#/$defs/VideoMetadata"
+        }
+      }
+    },
+    "AudioMetadata": {
+      "type": "object",
+      "properties": {
+        "sampleRate": {
+          "type": "integer",
+          "description": "Sample rate in Hz"
+        },
+        "channels": {
+          "type": "integer",
+          "description": "Number of channels"
+        },
+        "bitDepth": {
+          "type": "integer",
+          "description": "Bits per sample"
+        },
+        "codec": {
+          "type": "string"
+        }
+      }
+    },
+    "VideoMetadata": {
+      "type": "object",
+      "properties": {
+        "width": {
+          "type": "integer"
+        },
+        "height": {
+          "type": "integer"
+        },
+        "frameRate": {
+          "type": "number"
+        },
+        "codec": {
+          "type": "string"
+        }
+      }
+    },
+    "EncryptionInfo": {
+      "type": "object",
+      "required": [
+        "aeadSuiteId",
+        "hashSuiteId",
+        "noncePrefix",
+        "chunkSize",
+        "chunkCount",
+        "chunkMerkleRoot",
+        "wrappedDek"
+      ],
+      "properties": {
+        "aeadSuiteId": {
+          "type": "integer",
+          "enum": [1, 2],
+          "description": "1=AES-256-GCM, 2=AES-256-GCM-SIV"
+        },
+        "hashSuiteId": {
+          "type": "integer",
+          "enum": [1, 2],
+          "description": "1=SHA-256, 2=SHA-3-256"
+        },
+        "noncePrefix": {
+          "type": "string",
+          "pattern": "^[A-Fa-f0-9]{8}$",
+          "description": "4-byte random prefix (hex)"
+        },
+        "chunkSize": {
+          "type": "integer",
+          "const": 8388608,
+          "description": "Chunk size: 8 MiB (8388608 bytes)"
+        },
+        "chunkCount": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Total number of chunks"
+        },
+        "chunkMerkleRoot": {
+          "type": "string",
+          "pattern": "^[A-Fa-f0-9]{64}$",
+          "description": "Merkle root of ciphertext chunk hashes"
+        },
+        "wrappedDek": {
+          "type": "string",
+          "description": "Base64-encoded wrapped DEK"
+        },
+        "kekId": {
+          "type": "string",
+          "description": "Key ID used to wrap DEK"
+        }
+      }
+    },
+    "IntegrityInfo": {
+      "type": "object",
+      "required": ["sealHash", "deviceSignature", "deviceKeyId"],
+      "properties": {
+        "sealHash": {
+          "type": "string",
+          "pattern": "^[A-Fa-f0-9]{64}$",
+          "description": "SHA-256 binding hash (see seal-hash.md)"
+        },
+        "deviceSignature": {
+          "type": "string",
+          "description": "Base64-encoded ECDSA P-256 signature over sealHash"
+        },
+        "deviceKeyId": {
+          "type": "string",
+          "description": "Identifier for the device signing key"
+        },
+        "attestationChain": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Key Attestation certificate chain (PEM, Base64)"
+        },
+        "pqSignature": {
+          "type": ["string", "null"],
+          "description": "Reserved: ML-DSA-65 signature (Phase 3+)"
+        },
+        "pqSignatureAlgorithm": {
+          "type": ["string", "null"],
+          "description": "Reserved: PQ algorithm identifier"
+        }
+      }
+    },
+    "SessionInfo": {
+      "type": "object",
+      "required": ["sessionId", "serverIssuedAt", "policyId", "policyHash"],
+      "properties": {
+        "sessionId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Server-issued session ID"
+        },
+        "serverIssuedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when session was created"
+        },
+        "policyId": {
+          "type": "string",
+          "description": "Policy document identifier"
+        },
+        "policyHash": {
+          "type": "string",
+          "pattern": "^[A-Fa-f0-9]{64}$",
+          "description": "SHA-256 of policy document"
+        }
+      }
+    },
+    "AcousticsInfo": {
+      "type": "object",
+      "description": "Acoustic localization data from NoiseCamara",
+      "properties": {
+        "localizationMethod": {
+          "type": "string",
+          "enum": ["augmented_tdoa", "passive_tdoa", "none"],
+          "description": "Localization method used"
+        },
+        "estimatedPosition": {
+          "type": "object",
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" },
+            "z": { "type": ["number", "null"] }
+          },
+          "description": "Estimated source position in meters"
+        },
+        "estimatedDistance": {
+          "type": "number",
+          "description": "Distance to source in meters"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Localization confidence (0-1)"
+        },
+        "slideCount": {
+          "type": "integer",
+          "description": "Number of slides used"
+        },
+        "micDistanceM": {
+          "type": "number",
+          "description": "Microphone distance in meters"
+        },
+        "sampleRate": {
+          "type": "integer",
+          "description": "Audio sample rate"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,270 @@
+openapi: 3.1.0
+info:
+  title: Evidence Platform Session API
+  description: |
+    Session management API for evidence collection.
+    Sessions bind device attestation to capture policy.
+  version: 2.0.0
+  contact:
+    name: Evidence Platform Team
+
+servers:
+  - url: https://api.evidence.example.com/api/v2
+    description: Production
+  - url: https://staging-api.evidence.example.com/api/v2
+    description: Staging
+
+paths:
+  /sessions:
+    post:
+      operationId: createSession
+      summary: Create new evidence session
+      description: |
+        Initialize a session before starting evidence capture.
+        Returns policy hash and upload configuration.
+      tags:
+        - Sessions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSessionRequest'
+      responses:
+        '201':
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateSessionResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Attestation verification failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /sessions/{sessionId}:
+    get:
+      operationId: getSession
+      summary: Get session details
+      tags:
+        - Sessions
+      parameters:
+        - $ref: '#/components/parameters/sessionId'
+      responses:
+        '200':
+          description: Session details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionDetails'
+        '404':
+          description: Session not found
+
+    delete:
+      operationId: cancelSession
+      summary: Cancel session
+      description: Cancel an unused session. Cannot cancel if evidence uploaded.
+      tags:
+        - Sessions
+      parameters:
+        - $ref: '#/components/parameters/sessionId'
+      responses:
+        '204':
+          description: Session cancelled
+        '404':
+          description: Session not found
+        '409':
+          description: Session has evidence, cannot cancel
+
+components:
+  parameters:
+    sessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    CreateSessionRequest:
+      type: object
+      required:
+        - deviceInfo
+        - captureIntent
+      properties:
+        deviceInfo:
+          $ref: '#/components/schemas/DeviceInfo'
+        integrity:
+          $ref: '#/components/schemas/IntegrityAttestation'
+        captureIntent:
+          $ref: '#/components/schemas/CaptureIntent'
+
+    DeviceInfo:
+      type: object
+      required:
+        - model
+        - osVersion
+        - appVersion
+        - appSignatureDigest
+      properties:
+        model:
+          type: string
+          example: "Pixel 7a"
+        manufacturer:
+          type: string
+          example: "Google"
+        osVersion:
+          type: string
+          example: "14"
+        apiLevel:
+          type: integer
+          example: 34
+        appVersion:
+          type: string
+          example: "1.2.3"
+        appVersionCode:
+          type: integer
+          example: 123
+        appSignatureDigest:
+          type: string
+          pattern: '^[A-Fa-f0-9]{64}$'
+          description: SHA-256 of app signing certificate
+
+    IntegrityAttestation:
+      type: object
+      properties:
+        playIntegrityToken:
+          type: string
+          description: Google Play Integrity API token
+        keyAttestationCertChain:
+          type: array
+          items:
+            type: string
+          description: Key Attestation certificate chain (PEM, Base64)
+
+    CaptureIntent:
+      type: object
+      required:
+        - profile
+      properties:
+        profile:
+          type: string
+          enum: [audio_only, video_only, audio_video]
+        expectedMaxDurationSec:
+          type: integer
+          minimum: 1
+          maximum: 86400
+          default: 3600
+        features:
+          type: array
+          items:
+            type: string
+            enum: [acoustic_localization, gps_tracking, continuous_imu]
+
+    CreateSessionResponse:
+      type: object
+      required:
+        - sessionId
+        - policyId
+        - policyHash
+        - serverIssuedAtUtc
+        - uploadConfig
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        policyId:
+          type: string
+          example: "standard-evidence-v1"
+        policyHash:
+          type: string
+          pattern: '^[A-Fa-f0-9]{64}$'
+        serverIssuedAtUtc:
+          type: string
+          format: date-time
+        uploadConfig:
+          $ref: '#/components/schemas/UploadConfig'
+        serverEnvelopeKey:
+          type: string
+          description: Base64-encoded server public key for DEK wrapping
+
+    UploadConfig:
+      type: object
+      required:
+        - chunkSize
+        - maxChunks
+        - uploadEndpoint
+      properties:
+        chunkSize:
+          type: integer
+          const: 8388608
+          description: 8 MiB
+        maxChunks:
+          type: integer
+          example: 10000
+        uploadEndpoint:
+          type: string
+          format: uri
+        presignedUrlTtlSec:
+          type: integer
+          default: 3600
+
+    SessionDetails:
+      type: object
+      required:
+        - sessionId
+        - status
+        - createdAt
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [active, completed, cancelled, expired]
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        evidenceCount:
+          type: integer
+        policyId:
+          type: string
+        policyHash:
+          type: string
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          example: "INVALID_ATTESTATION"
+        message:
+          type: string
+          example: "Key attestation chain verification failed"
+        details:
+          type: object
+          additionalProperties: true
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - bearerAuth: []

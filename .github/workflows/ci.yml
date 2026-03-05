@@ -53,6 +53,12 @@ jobs:
       - name: Run nonce conformance tests
         run: python conformance-tests/nonce_conformance.py
 
+      - name: Run canonical JSON tests
+        run: python reference-impl/python/canonical_json.py
+
+      - name: Run Merkle tree tests
+        run: python reference-impl/python/merkle_tree.py
+
   test-typescript:
     name: TypeScript Test Vectors
     runs-on: ubuntu-latest

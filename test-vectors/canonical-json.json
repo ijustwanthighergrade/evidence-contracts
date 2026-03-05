@@ -13,7 +13,7 @@
       },
       "expected": {
         "canonical": "{\"a\":2,\"m\":3,\"z\":1}",
-        "sha256": "7d9f91a9c8e4b9d3e2f1a0b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8"
+        "sha256": "ebba85cfdc0a724b6cc327ecc545faeb38b9fe02eca603b430eb872f5cf75370"
       }
     },
     {
@@ -28,7 +28,7 @@
       },
       "expected": {
         "canonical": "{\"name\":\"test\",\"outer\":{\"a\":2,\"z\":1}}",
-        "sha256": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"
+        "sha256": "08b91d33cd40f99e7cfde97c3b88add90e8fc93cdc1f1e31b01148b88c1fc167"
       }
     },
     {
@@ -184,7 +184,7 @@
       },
       "expected": {
         "canonical": "{\"device\":{\"model\":\"Pixel 7a\",\"osVersion\":\"14\"},\"encryption\":{\"aeadSuiteId\":1,\"chunkSize\":8388608},\"evidenceId\":\"550e8400-e29b-41d4-a716-446655440000\",\"version\":\"2.0\"}",
-        "sha256": "b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e5f7a9b1c3d5e7f9a1b3c5d7e9f1a3b5c7"
+        "sha256": "b65c370ac2ab176825ae27c74880da64a413fbeda4de48404f09e94ffcdb9eb1"
       }
     },
     {

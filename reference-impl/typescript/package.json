@@ -1,0 +1,24 @@
+{
+  "name": "evidence-contracts-ts",
+  "version": "1.0.0",
+  "description": "TypeScript reference implementation for evidence contracts",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:aad": "npx ts-node test-aad.ts",
+    "test:vectors": "npx ts-node test-vectors.ts"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.11.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "testMatch": ["**/*.test.ts"]
+  }
+}

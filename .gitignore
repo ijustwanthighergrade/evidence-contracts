@@ -27,3 +27,16 @@ coverage/
 
 # Logs
 *.log
+
+# Kotlin/Gradle
+.gradle/
+reference-impl/kotlin/build/
+reference-impl/kotlin/.gradle/
+reference-impl/kotlin/gradle/wrapper/gradle-wrapper.jar
+reference-impl/kotlin/gradlew
+reference-impl/kotlin/gradlew.bat
+
+# TypeScript
+reference-impl/typescript/node_modules/
+reference-impl/typescript/dist/
+reference-impl/typescript/package-lock.json
